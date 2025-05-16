@@ -1,41 +1,22 @@
 const express = require('express');
-const router = express.Router();
-const Item = require('../models/item');
+const mongoose = require('mongoose');
+const app = express();
 
-// GET all items
-router.get('/', async (req, res) => {
-  const items = await Item.find();
-  res.json(items);
+// Middleware
+app.use(express.json());
+
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/crud-app', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 });
 
-// POST new item
-router.post('/', async (req, res) => {
-  const newItem = new Item({ name: req.body.name });
-  const item = await newItem.save();
-  res.json(item);
-});
+// Routes
+const itemsRouter = require('./routes/items');
+app.use('/api/items', itemsRouter);
 
-// PUT update item by ID
-router.put('/:id', async (req, res) => {
-  try {
-    const updatedItem = await Item.findByIdAndUpdate(
-      req.params.id,
-      { name: req.body.name },
-      { new: true }
-    );
-    if (!updatedItem) {
-      return res.status(404).json({ message: 'Item not found' });
-    }
-    res.json(updatedItem);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
+// Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
-
-// DELETE item by ID
-router.delete('/:id', async (req, res) => {
-  const result = await Item.findByIdAndDelete(req.params.id);
-  res.json({ success: !!result });
-});
-
-module.exports = router;
